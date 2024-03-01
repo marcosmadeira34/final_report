@@ -10,21 +10,21 @@ ascii_banner = art.text2art("Relatorio Final")
 colored_banner = cprint(ascii_banner, 'green')
 
 #ENTRDA DOS ARQUIVOS
-extractor_file_path = r"H:\01 - FATURAMENTO\99-EXTRATOR_PEDIDOS_DE_CLIENTES" # EXTRATOR
+extractor_file_path = r"C:\Users\marcos.silvaext\Documents\01 - INPUT_DATA" # EXTRATOR
 # SAÍDA DOS ARQUIVOS
 batch_totvs_path = r'H:\01 - FATURAMENTO\01 - CLIENTES - CONTROLE - 2024 TOTVS' # CRIARÁ AS PASTA AQUI
 #verificar se o pedido já foi faturado no banco de dados PostgresQL
 invoiced_orders = r'C:\DataWare\data\consolidated_files\consolidated_validated\PEDIDOS_FATURADOS' # PEDIDOS FATURADOS NO BANCO DE DADOS
-news_orders = r'C:\DataWare\data\consolidated_files\consolidated_validated\NOVOS_PEDIDOS' # NOVOS PEDIDOS IDENTIFICADOS NO EXTRATOR
-target_directory = r'H:\01 - FATURAMENTO\01 - CLIENTES - CONTROLE - 2024 TOTVS' # DIRETÓRIO DE DESTINO DOS PEDIDOS
+data_raw_path = r'C:\Users\marcos.silvaext\Documents\02 - DATA_RAW' # NOVOS PEDIDOS IDENTIFICADOS NO EXTRATOR
+target_directory = r'C:\Users\marcos.silvaext\Documents\04 - REPORTS' # DIRETÓRIO DE DESTINO DOS PEDIDOS
 output_merge_path = r'C:\DataWare\data\consolidated_files\consolidated_validated\MERGE_RELATÓRIO_FINAL' # RELATÓRIO FINAL 
-source_directory = r'C:\DataWare\data\consolidated_files\consolidated_validated\NOVOS_PEDIDOS' # DIRETÓRIO DE ORIGEM DOS PEDIDOS
-process_files = r'H:\01 - FATURAMENTO\04 - EXTRATORES PROCESSADOS'
+source_directory = r'C:\Users\marcos.silvaext\Documents\02 - DATA_RAW' # DIRETÓRIO DE ORIGEM DOS PEDIDOS
+process_files = r'C:\Users\marcos.silvaext\Documents\03 - EXTRATORES PROCESSADOS'
 consolidado =  r'H:\01 - FATURAMENTO\01 - CLIENTES - CONTROLE - 2024 TOTVS\CONSOLIDADOS'
 
 
 
-file_processor = FileProcessor(extractor_file_path, invoiced_orders, news_orders, output_merge_path)
+file_processor = FileProcessor(extractor_file_path, invoiced_orders, data_raw_path, output_merge_path)
 host_postgres = 'postgresql://postgres:123456789@localhost:5432/postgres'
 sql = ConnectPostgresQL(host_postgres)
 final_report = FinalReport(host_postgres)
@@ -61,18 +61,18 @@ if __name__ == "__main__":
             elif option == 2:
                 sleep(0.5)
                 print(Fore.YELLOW + 'CHECANDO NOVOS PEDIDOS ...' + Fore.RESET)
-                final_report.check_and_update_orders(extractor_file_path, 'pedido_faturamento')
+                final_report.check_and_update_orders(extractor_file_path, 'pedido_faturamento', data_raw_path)
 
             elif option == 3:
                 print(Fore.YELLOW + 'FORMANTANDO ARQUIVOS....' + Fore.RESET)
-                final_report.rename_format_columns(news_orders)
+                final_report.rename_format_columns(data_raw_path)
                 print(Fore.YELLOW + 'ARQUIVOS FORMATADOS COM SUCESSO ...' + Fore.RESET)
                 
                 
             elif option == 4:
                 print(Fore.YELLOW + 'MOVENDO ARQUIVOS PARA DIRETÓRIO....' + Fore.RESET)
                 file_processor.move_files_to_month_subfolder(
-                    directory_origin=news_orders, target_directory=target_directory)
+                    directory_origin=data_raw_path, target_directory=target_directory)
 
 
             elif option == 5:    
@@ -92,7 +92,8 @@ if __name__ == "__main__":
                     # Caminho para a pasta do cliente
                     client_folder = os.path.join(target_directory, subfolder, month_year)
 
-                    if not os.path.exists(client_folder):
+                    if not os.path.exists(client_folder) and not client_folder.startswith('01-EXTRATOR_PEDIDOS_DE_CLIENTES')\
+                        and not client_folder.startswith('01-GERAR RETROATIVOS') and not client_folder.startswith('RETROATIVOS GERADOS'):
                         os.makedirs(client_folder)
                         print(f'Criando pasta para o cliente {subfolder} em {client_folder} ...')
 
@@ -195,14 +196,14 @@ if __name__ == "__main__":
                 sql.create_database()
 
             elif option == 66:
-                file_processor.delete_new_files(files_path=news_orders)
+                file_processor.delete_new_files(files_path=data_raw_path)
 
             elif option == 77:
                 file_processor.move_file_to_client_folder(source_directory=source_directory,
                                                           target_directory=target_directory)
             
             elif option == 88:
-                final_report.rename_format_columns(news_orders)
+                final_report.rename_format_columns(data_raw_path)
                 print('Colunas renomeadas com sucesso!')
 
             elif option == 99:

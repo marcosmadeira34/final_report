@@ -12,14 +12,14 @@ colored_banner = cprint(ascii_banner, 'green')
 
 
 # DIRETÓRIO DE ENTRADA DOS ARQUIVOS EXTRATORES (EXTRACTION)
-extractor_file_path = r"/home/administrator/WindowsShare/01 - FATURAMENTO/01 - CLIENTES - CONTROLE - 2024 TOTVS/01-EXTRATOR_PEDIDOS_DE_CLIENTES" # EXTRATOR
+extractor_file_path = r"/home/administrator/WindowsShare/01 - FATURAMENTO/00-EXTRATOR_PEDIDOS_DE_CLIENTES" # EXTRATOR
 
 # DIRETÓRIOS DE SAÍDA DOS ARQUIVOS CRIADOS (LOADING)
 batch_totvs_path = r'/home/administrator/WindowsShare/01 - FATURAMENTO/01 - CLIENTES - CONTROLE - 2024 TOTVS' # CRIARÁ AS PASTA AQUI
 
 # DIRETÓRIO DE TRATAMENTO DOS ARQUIVOS (TRANSFORMATION)
-news_orders = r'/home/administrator/WindowsShare/01 - FATURAMENTO/03 - DATA_RAW' # NOVOS PEDIDOS IDENTIFICADOS NO EXTRATOR
-source_directory = r'/home/administrator/WindowsShare/01 - FATURAMENTO/03 - DATA_RAW' # DIRETÓRIO DE ORIGEM DOS PEDIDOS
+data_raw_path = r'/home/administrator/WindowsShare/01 - FATURAMENTO/02 - DATA_RAW' # NOVOS PEDIDOS IDENTIFICADOS NO EXTRATOR
+source_directory = r'/home/administrator/WindowsShare/01 - FATURAMENTO/02 - DATA_RAW' # DIRETÓRIO DE ORIGEM DOS PEDIDOS
 target_directory = r'/home/administrator/WindowsShare/01 - FATURAMENTO/01 - CLIENTES - CONTROLE - 2024 TOTVS' # DIRETÓRIO DE DESTINO DOS PEDIDOS
 
 # DIRETÓRIO DE ARQUIVOS PROCESSADOS (DRAFT)
@@ -30,7 +30,7 @@ output_merge_path = r'C:/DataWare/data/consolidated_files/consolidated_validated
 invoiced_orders = r'C:/DataWare/data/consolidated_files/consolidated_validated/PEDIDOS_FATURADOS' # PEDIDOS FATURADOS NO BANCO DE DADOS
 
 
-file_processor = FileProcessor(extractor_file_path, invoiced_orders, news_orders, output_merge_path)
+file_processor = FileProcessor(extractor_file_path, invoiced_orders, data_raw_path, output_merge_path)
 host_postgres = 'postgresql://postgres:123456789@localhost:5432/postgres'
 sql = ConnectPostgresQL(host_postgres)
 final_report = FinalReport(host_postgres)
@@ -45,18 +45,18 @@ if __name__ == "__main__":
         sleep(0.5)
         
         print(Fore.GREEN + 'INICIANDO CHECK NOVOS PEDIDOS NO EXTRATOR ...' + Fore.RESET)
-        final_report.check_and_update_orders(extractor_file_path, 'pedido_faturamento')
+        final_report.check_and_update_orders(extractor_file_path, 'pedido_faturamento', data_raw_path)
         print(Fore.YELLOW + 'PEDIDOS CHECADOS E ATUALIZADOS NO BANCO DE DADOS!' + Fore.RESET)
         sleep(0.8)
 
         print(Fore.YELLOW + 'INICIANDO FORMANTAÇÃO DOS ARQUIVOS....' + Fore.RESET)
-        final_report.rename_format_columns(news_orders)
+        final_report.rename_format_columns(data_raw_path)
         print(Fore.YELLOW + 'ARQUIVOS FORMATADOS, PRONTO PARA SEREM MOVIDOS!' + Fore.RESET)
         sleep(0.8)
         
         print(Fore.YELLOW + 'INICIANDO MOVIMENTAÇÃO DE ARQUIVOS PARA SEU DESTINO....' + Fore.RESET)
         file_processor.move_files_to_month_subfolder(
-            directory_origin=news_orders, target_directory=target_directory)
+            directory_origin=data_raw_path, target_directory=target_directory)
         print(Fore.YELLOW + 'ARQUIVOS MOVIDOS PARA SEU DESTINO!' + Fore.RESET)
         sleep(2)
         
@@ -74,13 +74,14 @@ if __name__ == "__main__":
             # Caminho para a pasta do cliente
             client_folder = os.path.join(target_directory, subfolder, month_year)
 
-            if not os.path.exists(client_folder):
+            if not os.path.exists(client_folder) and not client_folder.startswith('OLD_BILLING'):
+                #and not client_folder.startswith('01-GERAR RETROATIVOS') and not client_folder.startswith('02-RETROATIVOS GERADOS'):
                 os.makedirs(client_folder)
                 print(f'Criando pasta para o cliente {subfolder} em {client_folder} ...')
 
-            if client_folder.endswith('01-EXTRATOR_PEDIDOS_DE_CLIENTES'):
+            """ if client_folder.endswith('01-EXTRATOR_PEDIDOS_DE_CLIENTES'):
                 print(Fore.RED + 'Pasta de origem encontrada!' + Fore.RESET)
-                continue    
+                continue """    
 
             # Chama a função para mesclar os relatórios Excel na pasta do cliente
             print(Fore.GREEN + f'INICIANDO CONSOLIDAÇÃO DE ARQUIVOS EM {client_folder} ...' + Fore.RESET)
