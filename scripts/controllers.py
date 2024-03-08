@@ -34,6 +34,7 @@ class FinalReport:
         self.session.close()
         self.db_connection.connect().close()
 
+    
     # função para padronizar nomes das colunas        
     def padronizar_nomes_colunas(self, df):
         df.columns = (
@@ -42,6 +43,7 @@ class FinalReport:
             .str.replace(r'[^a-zA-Z0-9_]', '_', regex=True)  # Substitui caracteres especiais por underscores
         )
 
+    
     # função para formatar cnpj
     def formatar_cnpj(self, cnpj):
         # Verifica se o CNPJ é uma string válida
@@ -51,6 +53,7 @@ class FinalReport:
             return cnpj_formatado
         else:
             return cnpj
+    
     
     # função para formatar as células do arquivo final
     def format_cells(self, path):
@@ -117,9 +120,10 @@ class FinalReport:
                     # Carrega o arquivo e verifica extrator TOTVS com os pedidos
                     extract_df = pd.read_excel(file_path, sheet_name='2-Resultado', engine='openpyxl', header=1)
 
+                   
                     # verifica se a coluna "Nome do Cliente" esta presente no indice 1(2ª linha)
-                    if 'Pedido Faturamento' in extract_df.iloc[1].values:
-                        extract_df.columns = extract_df.iloc[1]                   
+                    if 'Pedido Faturamento' in extract_df.iloc[0].values:
+                        extract_df.columns = extract_df.iloc[0]                   
 
                     # Padroniza o nome da coluna para minúsculas e substitui espaços por underscore
                     extract_df.columns = extract_df.columns.str.lower().str.replace(' ', '_').str.replace('.', '') \
@@ -184,6 +188,27 @@ class FinalReport:
                                 order_group.to_excel(file_path, sheet_name='CONSOLIDADO', index=False, engine='openpyxl')
                                 print(f'Novo arquivo {file_name} criado.')
 
+                            
+                            # verifica se o arquivo contém colunas que não existem no banco de dados
+                            new_columns = set(new_orders_df.columns) - set(OrdersTable.__table__.columns.keys())
+                            if new_columns:
+                                print(f'Colunas novas encontradas: {new_columns}')
+                                print('Adicionando colunas ao banco de dados....')
+
+                                # Verifica se as colunas novas já existem no banco de dados
+                                existing_columns = set(OrdersTable.__table__.columns.keys())
+                                # adiciona as colunas novas ao banco de dados
+                                for column in new_columns:
+                                    if column not in existing_columns:
+                                        try:
+                                            self.db_connection.engine.execute(
+                                            f'ALTER TABLE {OrdersTable.__tablename__} ADD COLUMN {column} TEXT')
+                                            print(f'Colunas adicionadas com sucesso {column}')
+                                        except Exception as e:
+                                            print(f'Erro ao adicionar colunas: {e}')
+                                    else:
+                                        print('Colunas já existentes no banco de dados.')                            
+                            
                             # Atualiza o banco de dados com os pedidos ausentes
                             print('Atualizando banco de dados....!')
                             try:
@@ -264,7 +289,7 @@ class FinalReport:
         print(f'Tempo de execução: {end_time - start_time}')
 
     
-    
+    """ Função para tratar valores de faturamento""" 
     def corrigir_valor_faturamento(self,valor):
         try:
             if pd.notna(valor):
@@ -358,6 +383,7 @@ class FinalReport:
             'periodo_de_faturamento': 'PERÍODO DE FATURAMENTO',
             'origem_do_dado': 'ORIGEM DO DADO',
             'serie_do_equipamento': 'SERIE DO EQUIPAMENTO',
+           
 
         }
         
@@ -382,7 +408,9 @@ class FinalReport:
                                        'EMISSÃO PEDIDO', 'QTDE PEDIDO', 'VLR UNITÁRIO PEDIDO', 'PERCENT DESCONTO', 
                                        'VLR DESCONTO', 'TES', 'NATUREZA', 'SERIE DE FATURAMENTO', 'VLR UNITÁRIO FATURAMENTO', 
                                        'CLIENTE FATURAMENTO', 'LOJA FATURAMENTO', 'NOME CLI FATURAMENTO', 'QTDE FATURAMENTO', 
-                                       'ORIGEM DO DADO', 'SERIE DO EQUIPAMENTO']
+                                       'ORIGEM DO DADO', 'SERIE DO EQUIPAMENTO', 
+                                    
+                                       ]
                     
 
                     df = df.drop(columns_to_drop, axis=1, errors='ignore')
@@ -1060,8 +1088,6 @@ class FileProcessor:
                 return False
 
 
-                      
-
     # função para mover arquivos para diretório de processados simples
     def move_files_to_processed_folder(self, directory_origin, target_directory):
         # obtém os arquivos xlsx no subdiretório principal
@@ -1087,11 +1113,11 @@ class FileProcessor:
                 print(f'Erro ao mover o arquivo {file_to_move} possívelmente aberto: {e}')
                 return False
         
-        
 
-  
-        
-class TesteStreamlit:
+
+    
+
+""" class TesteStreamlit:
     def __init__(self, host):
         # Crie uma instância de ConnectPostgresQL usando o host do seu banco de dados PostgreSQL
         self.db_connection = ConnectPostgresQL(host)
@@ -1100,8 +1126,7 @@ class TesteStreamlit:
 
     def check_and_update_orders_streamlit(self, uploaded_file:file_uploader, col, progress_callback=None):
         start = time.time()
-        """Método para verificar e atualizar pedidos ausentes no banco de dados"""
-
+        
         try:
             # Carrega o arquivo fornecido pelo usuário
             extract_df = pd.read_excel(uploaded_file, sheet_name='2-Resultado', engine='openpyxl', header=1)
@@ -1229,6 +1254,4 @@ class TesteStreamlit:
             return False
 
     
-
-
-    
+"""
