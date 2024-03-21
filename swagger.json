@@ -1,0 +1,52 @@
+{
+    "swagger": "2.0",
+    "info": {
+      "title": "User Data API",
+      "description": "API para obter informações de usuários",
+      "version": "1.0"
+    },
+    "basePath": "/",
+    "schemes": [
+      "http"
+    ],
+    "paths": {
+      "/user/{user_id}": {
+        "get": {
+          "summary": "Obter dados de um usuário pelo ID",
+          "description": "Retorna os dados de um usuário com base no ID fornecido.",
+          "produces": [
+            "application/json"
+          ],
+          "parameters": [
+            {
+              "name": "user_id",
+              "in": "path",
+              "description": "ID do usuário a ser obtido",
+              "required": true,
+              "type": "string"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Operação bem-sucedida",
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "age": {
+                    "type": "integer"
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Usuário não encontrado"
+            }
+          }
+        }
+      }
+    }
+  }
+  

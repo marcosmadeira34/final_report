@@ -207,7 +207,7 @@ class FinalReport:
                                         except Exception as e:
                                             print(f'Erro ao adicionar colunas: {e}')
                                     else:
-                                        print('Colunas já existentes no banco de dados.')                            
+                                        print('Colunas já existentes no banco de dados...')                            
                             
                             # Atualiza o banco de dados com os pedidos ausentes
                             print('Atualizando banco de dados....!')
